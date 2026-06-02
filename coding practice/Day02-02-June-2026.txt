@@ -1,0 +1,15 @@
+Practice of the command we learnt in today's session 
+
+Cd 
+mkdir 
+ls -la
+ls -lah
+ls -lahrtS
+mv 
+vim 
+touch 
+nano 
+cat 
+head 
+tail
+
