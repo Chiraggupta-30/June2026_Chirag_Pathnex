@@ -1,3 +1,25 @@
 1.5 Hour Class today on the topic of linux 
 1.5 Rewatched the video again to get clearity on concept and commands 
 30 minute to connect to ec2 instance using ssh found the issue in security changed the ip from private to ipv4 public  
+
+
+
+ls -lahrtS
+mv
+vim
+touch
+nano
+cat
+head
+tailCd
+mkdir
+ls -la
+ls -lah
+ls -lahrtS
+mv
+vim
+touch
+nano
+cat
+head
+tail
