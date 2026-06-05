@@ -1,0 +1,7 @@
+03 Hour     "Morning Sesssion"
+35 Minute   "Coding Practice of day 04"
+40 Minute   "Coding Practice for Day 05"
+30 Minute   "English Series" 
+1 Hour      "Morning Session Rewatched"   
+2 Hour      "May Batch Git Class" 
+30 Minute   "Evening Class" 
