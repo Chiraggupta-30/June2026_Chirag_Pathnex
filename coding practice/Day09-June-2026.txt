@@ -1,0 +1,34 @@
+pipeline { 
+       agent any
+       parameters { 
+              string(name: 'ENVIRONMENT' , defaultvalue: 'dev' , description: 'Deployment Environment')
+             }
+       environment { 
+             INSTITUTE_NAME = "Pathnex"
+        } 
+          stages {
+               stage('Checkout') {
+                 steps {
+                      git url:  'https://github.com/Pathnex/sample-java.git'
+          }
+      }
+       stage('Deploy') {
+             steps {
+                 sh 'echo "Deploying to $ENVIRONMENT by $INSTITUTE_NAME" '                }
+             }
+         }
+   }
+
+
+    stages:
+        -deploy 
+
+      variables: 
+           INSTITUTE_NAME: "Pathnex" 
+           ENVIRONMENT: "dev"
+     
+      deploy:
+        stage: deploy
+        image:  alpine:latest 
+        script: 
+           - echo "Deploying to $ENIVORNMENT by $INSTITUTE_NAME"
