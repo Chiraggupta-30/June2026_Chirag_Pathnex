@@ -1,0 +1,13 @@
+"03 Hour"         "Morning Class"
+"45 Minutes"      "Coding Pratice of IAM Policy"
+"30 Minutes"      "Evening Class"
+
+
+
+
+
+
+
+               Tommorow task 
+
+

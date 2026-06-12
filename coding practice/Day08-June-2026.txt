@@ -1,0 +1,84 @@
+`Coding Practice of IAM Policy 
+
+#1 Allow listing objects in any S3 Bucket 
+
+
+{ 
+  "Version":     "2012-10-17" ,
+  "Statement":  [
+   {
+     "Effect":   "Allow",
+     "Action":   "ec2:ListObject",
+     "Resource":  "*"
+      }
+    ]
+  }
+
+          
+#2 Start EC2 Instance 
+
+{ 
+  "Version":     "2012-10-17",
+   "Statement":  [
+     { 
+       "Effect":   "Allow",
+       "Action":   "Ec2:StartInstance",
+       "Resource":  "*"
+     }
+   ]
+}
+
+
+
+#3 Start and Stop instane (Multiple Actions )
+
+
+{ 
+  "Version":     "2012-10-17",
+  "Statement":   [
+ {
+   "Effect":    "Allow", 
+   "Action":    [
+                  "Ec2.StartInstance",
+                  "Ec2.StopInstance"
+                ],
+   "Resource":  "*"
+     }
+   ]
+  }
+
+
+#4 Deny Deleting EC2 Instance 
+   
+
+{ 
+ "Version":     "2012-10-17",
+ "Statement":   [
+  {
+    "Effect":    "Deny",
+    "Action":    "EC2.DeleteInstance",
+    "Resource":  "*"
+  }
+    ]
+  }
+
+
+#5  Allow Reading S3 Object and Deny Deleting S3 Object 
+
+{ 
+  "Version":    "2012-10-17",
+  "Statement":  [
+   {
+     "Effect":    "Allow",
+     "Action":    "S3.ReadObject",
+     "Resource":  "*"
+    },
+ {
+     "Effect":    "Deny",
+     "Action":    "S3.DeleteObject",
+     "Resource":   "*"
+  }
+ ]
+}
+             
+   
