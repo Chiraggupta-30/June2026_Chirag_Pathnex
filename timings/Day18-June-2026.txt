@@ -1,0 +1,13 @@
+"2 Hour"         "Morning Class"
+"2 hour "      "Rewatched it"
+"25 minute"      "Introduction video"
+"30  minute"       "Coding practice"
+"2 hour"          "Terraform Class 2"
+    
+
+
+
+
+
+
+              
