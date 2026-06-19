@@ -1,0 +1,12 @@
+"3 Hour"         "Morning Class"
+"2.5 hour "      "Rewatched it"
+"25  minute"      "Introduction video"
+"25  minute"       "Coding practice"
+    
+
+
+
+
+
+
+              
