@@ -1,8 +1,9 @@
-"2 Hour"         "Morning Class"
-"2 hour "      "Rewatched it"
+" 2 Hour"        "Morning Class"
+" 1.5hour "      "Rewatched it"
 "25 minute"      "Introduction video"
-"30  minute"       "Coding practice"
-"2 hour"          "Terraform Class 2"
+"30  minute"      "Coding practice"
+"2 hour"          "Previous Batach Terraform Class Watched
+"30 Minute"       "Evening Class"
     
 
 
