@@ -62,15 +62,18 @@ stages:
  
 build 
    stage: build 
-   image: maven:3.8.1-jdk-17
-
 
     parallel: 
       matrix: 
-        - JAVA_VERSION: 
-           - "8"
-           - "11"
-           - "17"
+        - IMAGE : 
+             - maven:3.8.1-openjdk-8              
+             - maven:3.8.1-openjdk-11
+             - maven:3.8.1-jdk-17
 
-script: 
-  - echo "Building with Java $JAVA_VERSION"
+    image: $IMAGE
+
+    script:
+      - echo "Running in image: $IMAGE"
+      - java -version 
+      - mvn clean package 
+
