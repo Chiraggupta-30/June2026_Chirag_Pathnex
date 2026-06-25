@@ -1,0 +1,117 @@
+#Ansible 
+
+---
+- name: Create config file for CHirag
+  hosts: all
+  become: yes 
+  
+  tasks:  
+   - name: Write content to file
+     copy: 
+      det: /etc/chirag.conf
+      content: | 
+         Welcome to Devops training 
+         Today is Day 24 
+     
+
+
+# Terraform 
+   
+resource "aws_db_instance" "ChiragxRDS" {
+    allocate_storage       = 20 
+    engine                 = "mysql"
+    instance_state         = "db.t3.micro"
+    name                   = "admin"
+    password               = "Admin@123"
+    skip_final_snapshot    =  true 
+}
+
+
+
+#kubernetes 
+
+
+apiVersion: apps/v1
+kind : Deployment
+metadata:
+  name: Chirag-rolling
+spec: 
+   replicas: 3
+   strategy: 
+     type: RollingUpdate
+     rollingupdate:
+       maxSurge: 1 
+       maxUnavailable: 1
+   selector:
+      matchLabels: 
+        app: roll
+    template:
+       metadata: 
+        labels:
+           app: roll
+     spec:
+        containers: 
+         - name: web
+           image: nginx
+
+ 
+
+#JENKINS 
+
+
+pipeline {
+    agent any 
+    environment { 
+         INSTITUTE_NAME = "Chirag_June_Batch"
+    }
+     stages { 
+         stage('checkout') {
+             steps { 
+                 checkout scm
+          } 
+       }
+       stage('Build') {
+           steps { 
+              sh 'mvn clean compile'
+           }
+       }
+    }
+ }
+
+
+#Shell script
+
+
+#!/bin/bash
+
+SOURCE="/var/log"
+DEST="/backup/chirag-$(date +%F).tar.gz"
+
+tar -czf $DEST $SOURCE
+echo "Backup created at: $DEST"
+
+#GITLAB CI 
+
+
+stages: 
+ - build 
+
+
+build-main:
+  stage: build 
+  image: maven:3.8.1-jdk-17
+  script:
+    - mvn clean compile 
+  only:
+    - main 
+
+
+build-dev
+  stage: build 
+  imaeg: maven:3.8.1-jdk-17
+  script:
+    - mvn clean compile 
+  only 
+    - dev 
+
+
