@@ -1,0 +1,79 @@
+# Ansible
+---
+- name: "Fic the Broken code"
+  hosts: all
+  task: 
+   - name: Install
+     yum: 
+      name: nginx 
+      state: present
+
+
+# Terraform 
+
+resource "aws_instance" "Chiragec2" {
+   ami            =    "ami-34329abcd"
+   instance_type  =    "m7i.flex.large"
+   tags   = {
+     Name =  "fixed the code" 
+    }
+  }
+
+#Kubernetes 
+
+apiVerison: app/v1
+kind: Deployment 
+
+metadata: 
+ name: fixed 
+
+spec: 
+  replicas: 2
+
+  selector: 
+    matchlabels: 
+      app: fixed 
+
+ template: 
+   metadata: 
+     labels:
+       app: fixed
+
+  spec: 
+    containers: 
+     - name: app
+       image: nginx
+
+#jenkins
+
+pipeline {   
+   agent any 
+   environment { 
+        INSTITUTE_NAME = "CHIRAG" 
+   }
+    stages { 
+
+
+#gitlab Ci
+
+
+stages: 
+ - build 
+ 
+build 
+   stage: build 
+
+    parallel: 
+      matrix: 
+        - IMAGE : 
+             - maven:3.8.1-openjdk-8              
+             - maven:3.8.1-openjdk-11
+             - maven:3.8.1-jdk-17
+
+    image: $IMAGE
+
+    script:
+      - echo "Running in image: $IMAGE"
+      - java -version 
+      - mvn clean package 
+
