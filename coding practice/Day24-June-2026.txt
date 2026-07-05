@@ -1,6 +1,6 @@
 # Ansible
 ---
-- name: "Fic the Broken code"
+- name: "Install Nginx"
   hosts: all
   task: 
    - name: Install
