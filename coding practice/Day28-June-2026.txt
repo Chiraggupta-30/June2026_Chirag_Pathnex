@@ -1,0 +1,378 @@
+#task 1  for Kubernates (write a Pod yaml)
+
+apiVersion: v1
+kind: Pod 
+metdata: 
+ name: payment-pod
+
+spec: 
+  containers:
+   - name: payment 
+     image: nginx:latest 
+     ports:   
+      - containePort: 80
+
+
+#task 2 for Kuberates ( write a pod yaml again)
+
+apiVersion: v1 #Becasue this is not an core object of kubernates like deployment . replicasrt , statefulset 
+kind: Pod
+metadata: 
+  name: redis-pod
+
+spec: 
+ containers: 
+  - name: redis
+    image: redis:7
+    ports: 
+     - containerPorts: 6379
+
+
+#task 3 (again pod yaml)
+
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: mysql-pod 
+
+spec:
+  containers: 
+   - name: mysql
+     image: mysql:8
+     port:
+      - containerPorts: 3306
+
+#task 4 Deployment yaml file 
+
+apiVersion: apps/v1           #Because this is an core kubernates object 
+kind: Deployment 
+metadata: 
+ name: payment-deployemnt 
+
+ labels: 
+  app: payemnt 
+
+spec: 
+
+ replicas: 3
+ selector:
+   matchlabels:
+   app: payment-app
+
+ template: 
+  metadata: 
+   labels: 
+    app: payment-app
+  
+  spec: 
+   containers:  
+    - name: app/ payment app
+      image: payment-service:v1
+      ports: 
+       - containerPort: 8080
+
+
+
+#task 5 deployment yaml file 
+
+apiVersion: apps/v1
+kind: Deployment 
+metdata: 
+  name: user-deployment 
+  
+  labels: 
+   app: user
+
+spec: 
+
+replicas: 2
+
+selector: 
+  matchLabels: 
+   app: user-app
+
+template: 
+  metadata: 
+   labels: 
+    name: user-app
+  
+  spec: 
+   containers: 
+   name: user
+   image: user-service:v2
+   ports: 
+    - containerPort: 8080
+
+#task 6 
+
+apiVersion: apps/v1
+kind: Deployment 
+metadata: 
+ name: inventory-deployment
+ 
+ labels
+ app: inventorty
+ env= dev
+
+spec: 
+ replicas: 4
+  
+ selector: 
+  matchLabels: 
+   app: inventory-app
+ 
+ template: 
+   metdata:
+    labels: 
+     app: inventory-app
+   
+  spec: 
+   containers: 
+    - name: inventory 
+      image: inventory-service:v1
+      ports: 
+        - containerPort: 8080
+
+#task 7 
+
+apiVersion: apps/v1
+kind:  Deployment 
+metdata: 
+ name: order-deployemnt 
+ 
+spec:
+  replicas: 5
+  selector: 
+   matchLabels: 
+    app: order-app
+  
+  template: 
+   metadata: 
+     labels: 
+      app: order-app
+   
+   spec: 
+    containers: 
+     - name: order
+       image: order-service:2.11
+       ports: 
+        - containerPort: 8080
+
+#task 8 
+ 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: 
+ name: notification-deployment 
+
+spec: 
+ replicas: 2 
+ selector: 
+   matachLabels: 
+    app: notification-app
+    
+ template: 
+  metdata: 
+    labels: 
+     app: notification-app
+  
+  spec: 
+   containers: 
+    - name: notification 
+      image: notification-service:v3
+      ports: 
+       - containerPort: 8080
+
+#task 9 yaml file for service (load balancer , clusterip , nodeport)
+
+apiVersion: v1 
+kind: Service 
+metadata: 
+  name: payemnt-service
+
+spec: 
+ selector: 
+   app: payment 
+ 
+ ports: 
+   - port: 80
+     tarrgetort: 8080 
+  
+ type: ClusterIP
+
+#task 10 yaml file for LoadBalancer
+
+apiVersion: v1
+kind: Service
+metadata: 
+ name: user-service
+
+spec: 
+ selecto:r
+   app: user
+
+ ports: 
+  - port: 80
+    TargetPort: 8080
+
+ type: LoadBalancer
+
+# Task 11 
+
+apiVersion: v1 
+kind: Service
+metadata: 
+ name: inventory-service
+
+spec
+ selector: 
+   app: inventory 
+ 
+ ports: 
+  - port: 80
+    TargetPort: 8080
+
+ type: NodePort
+
+
+
+#task 12 
+
+apiVersion: v1
+kind: Service
+metadata: 
+ app: order-service
+
+spec: 
+  selector: 
+    app: order
+ 
+  ports: 
+   - port: 80
+     TargetPort: 8080 
+    
+  type: ClusterIP
+
+
+#task 13 
+
+apiVersion: v1
+kind: Service
+metadata:
+ name:  processing-service
+
+spec: 
+  selector: 
+    app: processing
+
+  ports: 
+   - port: 80
+     TargetPort: 8080
+
+  type: LoadBalancer
+
+
+ #task 14 Write config map yaml 
+
+apiVersion: v1 
+kind: ConfigMap
+metadata: 
+ name: payment-config
+
+data: 
+   DB_HOST: mysql 
+   DB_PORT: "3306"
+   ENV: production
+
+
+#Task 15 Write Secret File
+
+apiVersion: v1
+kind: Secret
+metadata: 
+ name: Payment-secret
+ 
+ type: Opaque
+ 
+ stringData:                                      # WE USED STRING data kubernetes will convert it manually just for interview purpose so that we can see the data otherwise we will use data and password going to be convereted
+  DB_HOSTNAME: Neeraj
+  DB_PASSWORD:  Isaverygoodperson 
+
+
+#task 16 spring boot payment service
+
+apiVersion: v1 
+kind: Config
+metadata: 
+  name: payment-config
+
+data: 
+ DB_HOST: mysql
+ DB_PORT: "3306"
+ ENV: production 
+
+
+#Task 17 
+
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+ name: user-config
+
+data: 
+ REDIS_HOST: redis
+ REDIS_PORT: "6379"
+ ENV: development
+
+#task 18 
+
+apiVersion: v1
+kind: ConfigMap
+metdata: 
+  name: order-config
+
+data: 
+  Kafka Broker: kafka:9092
+  Log Level: INFO
+  ENV: staging 
+
+
+#task 19 
+
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+ name: inventory-config
+
+data: 
+ DB_HOST: postgree 
+ DB_PORT: 5432
+ CACHE_HOST: redis
+ ENV: producton 
+
+
+#task 20 
+
+apiVersion: v1
+kind: Secret
+metadata: 
+ name: payment-secret
+ 
+type: Opaque
+
+stringData: 
+  Username: useradmin
+  Password: User@123
+
+#Task 21
+
+
+apiVersion: v1
+kind: Secret
+metdata: 
+ name: booking-secret
+ 
+type: Opaque
+
+stringData: 
+ 
