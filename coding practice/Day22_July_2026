@@ -1,0 +1,249 @@
+# Terraform Code Practice
+
+provider "aws" { 
+  region    =    "ap-south-1"
+  }
+
+resource "aws_instance" "Web_server_01" {
+  
+   ami                     =     "ami-s832092"
+   instance_type           =     "c7i-flex.large"
+   key_name                =     "ssh-key"
+   security_group          =     "subnet-383"
+   vpc_security_group_ids  =     ["sg-2323"] 
+
+
+   tags = { 
+    
+     Name =  "Web-server-jenkins"
+     Environment  = "Staging"
+     Region       =  "ap-south-1"
+     Application  =   "Payment" 
+     Team         =   "Devops" 
+     }
+  }
+
+ output  "public_ip"  {
+   value =  aws_instance.Web_server_01.public_ip
+ }
+
+output "private_ip" {
+ value = aws_instance.Web_server_01.[*].public_ip
+}
+
+
+# terraform code for S3 bucket 
+
+   provider "aws"   {
+     region   =   "ap-south-1"  
+   }
+
+ resousce "aws_s3_bucket" "bucker_for_logs" { 
+    bucket   =    "bucker-logs-prod-service-9922"         ## name should be unique no one should be using this name 
+   
+
+  tags = { 
+    
+   Name         =  "Bucket-for-logs" 
+   Region       =  "ap-south-1"
+   Environment  =  "staging"
+   Application  =  "Payment-log"
+   Team         =  "Devops_team" 
+    
+    }
+ }
+
+
+output "bucker_name" {
+  value   =   aws_s3_bucket_bucker_for_logs.bucket 
+  }
+
+# terraform code for Backend S3 
+
+
+terraform {
+   backend "s3" {
+     bucket          =  "terraform-state-locking-Qa"
+     key             =   "Qa/State-locking-Qa.tfstate"
+     region          =   "ap-south-1"
+     dynamodb_table  =   "db-table-lock"
+     encrypt         =   true  
+  }
+}
+
+
+# terraform for S3 using file lock 
+
+
+
+terraform { 
+   backend "s3"  {
+      bucket          =    "State-locking-prod-22"
+      key             =    "prod/locking.tfstate"
+      region          =    "ap-south-1"
+      use_lock_file   =    true                                  # only available in version 1.10 
+      encrypt         =    true 
+    }
+ }
+
+
+
+ 
+
+## ansible yaml to install apache 
+
+
+--- 
+- name:  Install and start the apache 
+  hosts: webserver 
+  become: yes 
+  
+  tasks: 
+    - name: Install Apache 
+       yum: 
+        name:   httpd
+        state:  present 
+    
+    - name:  Start the service
+        service:
+          name: httpd
+          state: started 
+          enabled: yes 
+   
+
+
+## kubernetes for Deployment 
+
+
+apiversion:    apps/v1
+kind:          Deployment 
+metadata: 
+  name:           payment-service-deployment
+  environment:    staging
+
+
+spec:
+  replicas: 1    #by default replicas is 1 in deployment 
+  selector: 
+    matchLabels:   
+     app: payment-service
+  
+  template: 
+     metadata: 
+       labels:  
+         app:  payment-service
+
+     spec: 
+       containers:  
+         - name:   paymenet-service-pods
+           image:  payment:13.6
+           ports: 
+             - containerPort: 80
+
+
+
+
+
+# Kubernetes for ReplicaSet 
+
+apiversion:   apps/v1
+kind:         ReplicaSet
+metadata:     
+  name:  backend-serviec-replicaset
+  labels:
+   env:   staging 
+   app:   backend 
+
+spec:  
+  replicas:   5 
+  selector:
+    matchLabels:
+     app:         backend-service
+  
+  template:    
+    metadata:
+      labels:
+        app:     backend-service
+
+    spec:
+      containers:
+       - name:   backend-service-pod
+         image:  nginx:latest / backend-service:17.2    # image name gets changed according to the requirements
+         ports: 
+          - containerPort:  80  
+
+
+# For Pod 
+
+apiversion:  v1
+kind:        Pod
+metadata:    
+  name:    frontend-view-pod
+  
+spec:  
+   containers: 
+     - name:  frontend-view-pod
+      image:  front:1.25
+      ports:   
+       - containerPorts:  80
+
+# For configMap
+
+
+apiversion:    v1
+kind:          ConfigMap
+metadata:      
+  name:       database-backend-configmap
+
+data: 
+  DB_HOSTNAME: "mysql-22"
+  DB_HOST:      22
+  
+
+
+
+# For Secret
+
+apiversion:  v1
+kind:        Secret
+metadata:    
+  name:   backend-host-secret
+
+type:   opaque    # define which type of secret it is we have different kind of secret by default we use opaque which stores the key value data
+
+data: 
+
+DB_PASSWORD:   89hknons    # it is base64 coded 
+TOKEN:      9u309u3        # it is also base64 coded 
+
+
+
+# For Statefulset 
+
+
+apiversion:   apps/v1
+kind:        StatefulSet
+metadata:     
+ name:  Backend-sql-statefulset
+
+spec:
+
+ serviceName:  Backend-sql 
+ replicas:  4
+ selector:   
+  matchLabels: 
+      app:  backend-sql
+    
+ template: 
+   metadata:
+    labels: 
+      app: backend-sql
+
+   spec:
+     containers:
+      - name: backend-pod
+        image:  backend:14.22
+        ports: 
+         - containePort: 80
+
+
