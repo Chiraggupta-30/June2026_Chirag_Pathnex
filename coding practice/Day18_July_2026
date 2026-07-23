@@ -1,0 +1,36 @@
+# docker for python
+
+FROM python:3.12-slim
+WORKDIR /ritik
+COPY . .
+RUN pip install -r requirements.txt --production 
+EXPOSE: 8000
+CMD ["python", "app.py"]
+
+
+# docker file for java multistage 
+
+FROM eclipse-temurin:17-jre-alpine  AS builder #openjdk is depreciated and now eclipse is being used 
+WORKDIR /app
+COPY package*.xml .
+RUN maven clean buld  -DfinalName=ritik.jar
+
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=buider app/target/ritik.jar ritik.jar
+EXPOSE: 8080
+CMD ["java", "-jar", "ritik.jar"] 
+
+
+
+# docker file for node.js
+
+FROM node:22-alpine
+WORKDIR /app
+COPY . . 
+RUN npm install
+EXPOSE: 3000
+CMD ["npm", "start"]
+
+
+#Docker file for nginx 
