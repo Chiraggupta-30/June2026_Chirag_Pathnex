@@ -1,0 +1,377 @@
+Practice For L1 
+
+#1. docker for java multi build 
+
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
+WORKDIR /workspace
+COPY . . 
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin-17-jre-alpine
+WORKDIR /workspace 
+COPY -from=builder /workspace/target/payment.jar payment.jar 
+EXPOSE 8080
+CMD ["java", "-jar", "payment.jar"]
+
+
+#2. Docker file for python
+
+FROM Python:3.12-slim
+WORKDIR /app
+COPY . . 
+RUN pip install -r requirements.txt 
+EXPOSE 8000
+CMD ["python", "service.py"]
+
+
+
+#3. Docker file for node 
+
+FROM node:22-alpine 
+WORKDIR /Newdev
+COPY . .
+RUN npm install
+EXPOSE 3000
+CMD ["npm", "start"]
+
+
+## for Kubernetes 
+
+#1. for Deployment 
+
+
+apiVersion: apps/v1
+kind:       Deployment
+metadata: 
+ name: payment-service-deployment 
+
+spec: 
+  replicas: 5 
+  selector: 
+    matchLabels: 
+      app: payment-service
+  
+   template:
+     metadata:
+      labels: 
+       app: payment-service
+    
+     spec:
+       containers:
+        - name: payment-service-pod
+          image: payment:latest 
+          ports:
+           - conatinerPort: 80
+
+
+#2. StatefulSet
+
+apiVersion: apps/v1
+kind:       StatefulSet
+metadata: 
+  name: service-statefulset
+
+spec: 
+  serviceName: "service"
+  replicas:     5
+  selector
+     matchLabels:
+       app: service
+   
+   template:
+     metadata:
+      labels:
+       app: service
+
+     spec:
+       containers:
+        - name: service-pod
+          image: service:latest
+          ports: 
+           - containerPort: 80
+
+
+#3. service
+
+apiVersion: v1
+kind:    Service
+metadata: 
+  name: frontend-service
+
+spec:
+ selector:
+   app: frontend
+
+    ports:
+     -port: 80
+       targetPort: 8080
+ 
+    type: ClusterIP
+
+
+
+#for LoadBalancer
+
+apiVersion: v1
+kind:       Service
+metadata:    
+  name:   backend-service
+
+spec: 
+  selector: 
+    app: backend
+   
+   ports: 
+    port:80
+    - targetPort: 8080
+  
+    type: LoadBalancer
+
+
+## for configMap
+
+apiVersion: v1
+kind:  ConfigMap
+metadata:  
+  name: Backend-configmap
+
+data: 
+ 
+ DB_host: MySQL
+ DB_name: hcl
+ DB_port:  524
+
+## for secret
+
+apiVersion: v1
+kind:       Service
+metadata:  
+  name: backend-service
+
+type: opaque
+
+data: 
+
+ name: 4assksno
+ password: kskkns99 
+ api_key:  84488_282
+
+
+
+-------------------------------##################3
+
+#Terraform  for ec2 
+
+provider "aws" {
+  region = "ap-south-1"
+ }
+ 
+resource "aws_instance" "webserver_01" {
+ 
+  ami           =      "ami-72829"
+  instance_type =       "c71-flex.large"
+  subnet_id      =       "hcl"
+  security_group =       "subnet-3882"
+  vpc_security_group_ids = ["sg-82282"]
+
+
+tags = { 
+   
+  Name       =  "Webserver"
+  Environment = "Dev"
+  Application = "service"
+  Team        = "Devops-team-02"
+
+  }
+}
+
+
+output "Public_IP"  {
+  name = aws_instance.webserver_01.public_ip 
+}
+
+output "Private_ip"
+  name = aws_instance.webserver_01.[*].private_ip
+}
+
+
+
+# For s3
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_s3_bucket" "Logs_bucket"  {
+  
+  Bucket   =   "logs-for-tf-dev-221"
+  
+
+tags = { 
+  
+ Name   =    "log-bucket"
+ ENVIRONMENT  = "dev"
+ APPLICATION  =  "Frontend-service"
+ TEAM         =  "Devops"
+
+   }
+}
+ 
+output "bucket_name" {
+  name = aws_s3_bucket.logs_bucket.bucket 
+   }
+
+
+## for dynamoDb table locking
+
+terraform  {
+ backend "s3"  {
+  
+  bucket    =  "logs-file-terraform"
+  key       =   "dev/lock/state-locking.tfstate"
+  region    =    "ap-south-1"
+  dynamodb_table = true
+  encrypt        = true 
+
+   }
+ }
+
+
+## for uselock_file 
+
+terraform   {
+  backend "s3"  {
+  
+  bucket   =   "lock-state-dev-8745"
+  key      =    "dev/state/state-lock.tfstate"
+  region   =    "ap-south-1"
+  use_lock_file = true
+  encrypt    = true
+
+  }
+}
+
+
+
+-----------------------------------------------
+
+
+
+--- 
+- name: Install and run nginx 
+  hosts: frontendserver:backendserver
+  become: yes 
+  
+  tasks: 
+   - name: Install Nginx
+     yum: 
+      name: nginx
+      state: present 
+
+    -name: start the nginxx....
+      service: 
+        name: nginx
+        state: started 
+        enabled: yes 
+
+
+# to install apache on Linux
+
+---
+- name: Install and Start The Apache
+  hosts: Webserver
+  become: yes
+
+  tasks:
+
+    - name: Installing Apache
+      dnf:
+        name: httpd
+        state: present
+
+    - name: Enabling the Apache service
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+
+
+# install nginx on ubuntu 
+
+---
+- name: Installing and starting Apache on Ubuntu
+  hosts: frontend_build
+  become: yes
+
+  tasks:
+
+    - name: Installing Apache
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: Enabling Apache service
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+
+----------------------######################3
+
+
+# code for Jenkins 
+
+pipeline {
+  agent 
+         { label 'linux'  }
+
+   stages {
+  
+    stage('Checkout') {
+            steps { 
+               echo "checking out the code from GitHub"
+                git branch: 'Main',
+                      url:  'https://github.com/hcl/devnew.git'
+          }
+
+    stage('build')   {  
+            steps { 
+             echo "compiling the code....." 
+              sh mvn clean package -Dskiptets
+ 
+         }
+  
+     stage('test')  { 
+            steps { 
+             echo  "testing the package..."
+               sh mvn test 
+       }
+ 
+     stage('Docker Build')  {
+             steps { 
+               echo "Building the docker image"
+                sh 'docker build -t service:21 ."
+       }
+ 
+     stage('pushing image')  {
+            steps { 
+               echo "image build successfully now pushing to ecr"
+                sh  'docker push'
+     }
+   
+   stage('Deploy') {
+          steps { 
+             echo "image is ready to be deploy"
+             sh 'kubectl apply -f deployment.yaml'
+
+       }
+     }
+   }
+ }
+            
+
+
+
+  
