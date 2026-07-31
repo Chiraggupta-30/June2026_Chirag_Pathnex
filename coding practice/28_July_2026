@@ -1,0 +1,249 @@
+# kubernets Yaml for pods (declrative one)
+
+
+apiVersion: v1
+kind:   Pod
+metadata: 
+ name: Payment-Pod
+spec:
+  containers:
+    - name: Payment
+      image: Payment:latest 
+      ports: 
+       - containerPort: 80
+
+
+## For service
+
+apiVersion: v1
+kind:   Service
+metadata: 
+  name:  Backend-service
+spec:
+  selector:
+    app: Backend
+
+  ports:
+    - protocol: TCP 
+      port:   80
+      targetPort:   80
+  
+  type: LoadBalancer
+
+
+----------------------------------------------------------
+#multi stage docker hub
+
+FROM maven:3.9.9-eclipse-temurin  AS builder
+WORKDIR /workspace
+COPY . . 
+RUN mvn clean package -DskipTests
+
+
+FROM eclipse-temurin-17-jre-alpine
+WORKDIR /workspace
+COPY -from=builder /workspace/target/*.jar frontend.jar
+EXPOSE 7554                                  # Usually it goes exposed on port number 8080 default port of java but totally depends on the requirements which is in the file 
+CMD ["java", "-jar", "payment.jar"]
+
+
+---------------------------------------------------
+# ansible  for installing nginx
+
+---
+- name: Installing Nginx and Start the Service
+  hosts: Linux:Ubuntu
+  become: yes
+
+  tasks:
+   
+    -name: Installing nginx
+     yum: 
+       name: nginx
+       state: present
+  
+    -name: Starting the service...
+     service:
+       name: nginx
+       state: started
+       enabled: yes
+
+
+
+#for installing multiple package
+
+--- 
+- name: Installing Multiple Package
+  hosts: Linux:Centos:Backend
+  become: yes
+
+  vars: 
+   packages:
+     - wget
+     - curl
+     - git
+     - vim
+  
+  tasks: 
+
+    - name: Installing Package 
+      yum: 
+        name: "{{packages}}"
+        state: present 
+
+
+
+
+---
+- name: Installing Package 
+  hosts: Backend:linux:centos
+  become: yes
+  
+  vars: 
+    packages:
+      - git
+      - vim
+      - git
+      - curl
+      - wget 
+ 
+ tasks:
+   - name: Installing Package
+     yum:
+       name: "{{packages}}"
+       state: present
+
+
+-------------------------------------------------------
+#terraform for backend 
+
+terraform {
+ backend "s3" {
+   
+    bucket  = "terraform-state-locking-dev-383"
+    key     = "dev/lock.tfstate"
+    region  = "ap-south-1"
+    dynamodb_table = true
+    encrypt  = true
+    
+    }
+  }
+
+
+# terraform code for S3 bucket
+
+provider "aws" {
+   region = "ap-south-1" {
+
+resource "aws_s3_bucket" "logs_file" {
+    bucket    =      "payment-log-file-QA-2829"
+    
+  
+tags = { 
+  
+  Region         =   "ap-south-1" 
+  Application    =   "QA"
+  Team           =   "Devops" 
+  Name           =   "logs-file"
+  
+     } 
+   }
+ }
+
+output "bucket_name" {
+  value = "aws_s3_bucket.logs_file.bucket"
+}
+
+
+
+## for Ec2 
+
+provider "aws" {
+ region = "ap-south-1" {
+ 
+resource "aws_instance" "database_server"  {
+  
+  ami                     =        "ami-232221"
+  instance_type           =        "c7i-flex.large"
+  key_name                =        "ssh-unlock"
+  subnet_id               =        "subnet-211"
+  vpc_security_group_ids  =        ["sg-31221"]
+
+
+tags = {
+  
+  NAME           =  "webserver-for-database"
+  ENVIRONMENT    =   "DEV"
+  APPLICATION    =   "Database"
+  TEAM           =    "Devops"
+
+    } 
+   }
+  }
+
+output "Public_IP"  {
+  value     =   "aws_instance.database_server.[*].Public_IP"
+}
+
+output "Private_IP"
+   value    =  "aws_instanece.database_server.[*].Private_IP"     #only use [*] when there is more then 1 ec2 instance 
+
+}
+
+----------------------------------------------------------------------------
+
+# Jenkins written decalarative script ( language = "groovy")
+
+pipeline { 
+  agent {
+         label 'Webserver' 
+        }
+
+stages {
+ 
+  
+stage('Checkout') {
+     steps   { 
+           echo "Checking out the code from GitHub"
+            git branch: 'Main',
+                   url:  'https://github.com/application/new-update.yaml'
+          }
+      }
+
+
+
+stage('Build') {
+       steps  {
+            echo "COmpiling the code...." 
+             sh '/.mvnw clean package -Dskiptest'
+           }
+         }
+
+stage('Unit test') {
+    steps {
+       sh '/.mvnw test'
+      }
+   }
+
+stage('Build Docker Image) {
+     steps    {
+         sh 'docker push -t'
+    }
+ }
+
+stage('artificat pushing') {
+           steps {
+              sh 'docker push'
+    }
+  }
+
+stage('Deployment') {
+      steps {
+         sh 'kubectl apply -f'
+      }
+    }
+  }
+}
+
+
+
