@@ -1,0 +1,381 @@
+docker for java spring boot multi build
+
+FROM maven:3.9.9-eclipse-temurin-21-jdk AS builder
+WORKDIR /workspace
+COPY *.json .
+RUN mvn clean package -Dskiptests
+
+
+FROM eclpise-temurin-17-jre-alpine
+WORKDIR /workspace
+COPY -from=builder /workspace/target/payment.jar payment.jar
+EXPOSE 8080
+CMD ["-jar", "java", "payment.jar"]
+
+## For python
+
+FROM python:3.12-slim
+WORKDIR /payment
+COPy . . 
+RUN pip install requirements.txt
+EXPOSE 8000
+CMD ["python", ".payment.py"]
+
+
+# For Node
+
+FROM node:22-alpine
+WORKDIR /Newservice
+COPY . .
+RUN npm install 
+EXPOSE 3000
+CMD ["npm", "start"]
+
+
+# for java 
+
+FROM maven:3.9.9-eclipse-termurin-22-jdk AS builder
+WORKDIR /app
+COPY ..
+RUN /mvnw clean package -DskipTests
+
+FROM eclipse-temurin-21-jdk-alpine
+WORKDIR /opy/app
+COPY -from=builer /app/target/employee-management-api-1.0.0.jar app.jar
+EXPOSE 8080
+CMD ["java", "jar", "app.jar"]
+
+
+
+------------------- 
+
+kubernetes for deployment
+
+apiVersion: apps/v1
+kind:       Deployemnt
+metadata:      
+  name: Service-deployment
+
+spec:
+ replicas: 5
+ selector: 
+  matchLabels: 
+    app: Service
+
+ template:
+   metadata: 
+    labels: 
+     app: Service
+   
+   spec:
+     containers:
+      - name: Service-pod
+        image: Service:latest
+        ports:
+         - containerPort: 80
+
+
+# for pod
+
+apiVersion: v1
+kind:       Pod
+metadata:    
+    name: Frontend-service-pod
+
+spec: 
+  containers: 
+   - name: Frontend-pod
+    image: frontend:latest
+    ports:  
+     - containerPort: 80
+    
+# For replicas
+
+apiVersion:  apps/v1
+kind:       ReplicaSet
+metadata: 
+ name: Backend-service-replicaset
+
+spec:
+ replicas: 5
+ selector: 
+  matchLabels: 
+   app: Backend-service
+ 
+ template: 
+   metadata: 
+    labels: 
+     app: Backend-service
+   
+   spec:
+     containers:
+      - name: service
+        image: service:latest
+        ports:   
+         - containerPort: 80
+
+
+# for statefulset
+
+apiversion: apps/v1
+kind:  StatefulSet
+metadata: 
+  name: Backend-database-statefulset
+
+spec: 
+ serviceName: "Backend-database"
+ replicas:    5
+ selector: 
+  matchLabels: 
+    app: backend-database
+    
+ template: 
+  metadata:
+    labels:
+     app: backend-database
+
+  spec:
+   containers:
+    - name: backend
+      image: backend:latest
+      ports: 
+       - containerPort: 80
+
+# for service
+
+apiVersion: v1
+kind:       Service
+metadata: 
+  name:   frontend-service
+
+spec:
+  selector: 
+   app: frontend
+
+  ports: 
+    - protocol : TCP 
+      port: 80
+      targetPort: 80
+
+  type: ClusterIP
+
+# for LoadBalancer
+
+apiVersion: v1
+kind:       Service
+metadata: 
+  name: payment-loadbalancer
+
+spec: 
+  selector: 
+   app: payment
+
+  ports:
+   - protocol: TCP 
+     port: 80
+     targetPort: 8080
+
+  type: LoadBalancer
+
+
+# For NodePort
+
+apiVersion: v1
+kind:       Service
+metadata: 
+  name:   backend-nodeport
+
+spec: 
+  selector: 
+    app: backend
+
+  ports: 
+   - protocol: TCP
+     port: 80
+     targetPort: 8080
+  
+  type: NodePort
+
+
+-----------------------------------
+#for terraform 
+
+EC2 creation 
+
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_instance" "santosh_pathnex" {
+
+  ami                       =           "ami-27128"
+  instance_type             =           "c7g.medium"
+  key_name                  =           "pathnex"
+  subnet_id                 =           "subnet-24123"
+  vpc_security_group_ids    =           ["sg-92992"]
+
+
+ tags = {
+  
+  NAME          =    "CHIRAG-Pathnex"
+  ENVIRONMENT   =     "DEV"
+  REGION        =     "AP-SOUTH-1"
+  TEAM          =     "DEVOPS-21"
+  APPLICATION   =     "BACKEND"
+
+    }
+ }
+ 
+
+output "Public_IP"  {
+  value = aws_instance.Santosh_pathnex.public_ip 
+}
+
+output  "Private_ip"  {
+  value   =  aws_instance.Santosh_pathnex.private_ip
+ }
+
+
+------------------------------------
+for s3 
+
+provider "aws"  {
+ region = "ap-south-1" 
+ }
+
+resource "aws_s3_bucket" "log_for_payment"  {
+
+ bucket    =    "backend-logs-for-dev-278"
+ 
+ 
+tags = { 
+ 
+ NAME        =    "logs-bucket"
+ ENV         =    "DEV" 
+ REGION      =    "AP-SOUTH-1"
+ APPLICATION =    "BACKEND"
+
+  }
+}
+
+output "Bucket_Name"  {
+  value  =  aws_s3_bucket.logs_for_payment.bukcet
+ }
+
+
+-------------------------------------------
+For backend
+
+
+terraform {
+ backend "s3" {
+
+ bucket          =   "terraform-backend-for-backend-2026"
+ key             =   "Dev/lock.tfstate"
+ region          =   "ap-south-1"
+ dynamodb_table  =   "backend-lock"
+ encrypt         =    true 
+ 
+  }
+}
+ 
+
+for backend use_lockfile
+
+terraform { 
+ backend "s3" {
+
+bucket       =   "lock-file-backend"
+key          =    "dev/terraform.tfstate"
+region       =    "ap-south-1"
+use_lockfile =    true 
+encrypt      =    true 
+  }
+}
+
+
+------------ 
+for ansible 
+
+---
+- name: Installing nginx 
+  hosts: frontend:backend
+  become: yes
+
+  tasks: 
+   - name: Installing 
+     yum:
+      name: nginx
+      state: present
+
+
+  - name: enabling
+    service:
+     name: nginx
+     state: started
+     enabled: yes 
+
+
+------------------------------
+for Jenkins
+
+
+pipeline {
+ agent { 
+     label 'c7' 
+  } 
+
+stages {
+
+
+stage('Checkout')  {
+  steps { 
+      echo "Checking Out the code from git"   
+       git branch: 'Main',
+            url  : 'https://github.com/new-dev-project.git'
+    }
+ }
+
+stage('build') {
+ steps { 
+       echo "building the code....."
+       sh  'mvn clean build -DskipTests'
+     }
+   }
+
+
+stage('Unit Test') {
+   steps { 
+      echo "Testing in progess...."
+       sh 'mvn test'
+    }
+ }
+
+stage('Docker Image') {
+    steps { 
+         echo "Building the docker image..."
+          sh  'docker build -t payment:latest .'
+   }
+ }
+
+stage('Pushing The Image') { 
+     steps  {
+        echo "Pushing the image to docker hub" 
+         sh 'docker push payment:latest'
+    }
+ }
+
+stage('Deployment')  {
+   steps { 
+      echo "Deploying in progress...."
+      sh 'kubectl apply -f deployment.yaml'
+
+      }
+    } 
+  }
+}
+ 
+
+
+
