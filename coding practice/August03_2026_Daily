@@ -1,0 +1,125 @@
+Rewrite this YAML manually:
+
+---
+- name: Installing nginx
+  hosts: Webserver
+  become: yes
+  
+  tasks: 
+   - name: Installing the nginx..
+     yum: 
+      name: nginx
+      state:  present 
+   
+  - name: Enabling nginx..
+    service:
+      name: nginx
+      state: started
+      enabled: yes 
+
+
+## 🔹 Terraform Task — Create EC2 (c5.xlarge)
+
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_instance" "santosh_pathnex_ec2" {
+   ami                     =        "ami-28272"
+   instance_type           =        "c5.xlarge"
+   key_name                =        "pathnex-unlock"
+   subnet_id               =        "subnet-2727"
+  vpc_security_group_ids   =        ["sg-2728"]
+
+tags = {
+  
+ NAME        = "santosh-pathnex"
+ ENVIRONMENT =  "DEV"
+ APPLICATION =  "FRONTEND"
+ REGION      =   "ap-south-1"
+ TEAM        =   "devops"
+
+  }
+}
+ 
+
+output "Public_IP"  {
+  value   =   aws_instance.santosh_pathnex_ec2.public_ip
+} 
+
+output "Private_IP"  {
+  value    =  aws_instance.santosh_pathnex_ec2.private.ip
+ }
+
+
+## 🔹 Kubernetes Task — Create Nginx Pod
+
+
+
+apiVersion: v1
+kind:       Pod
+metadata :  
+  name: Service-pod 
+
+spec:
+ selector:
+   app: service
+ 
+ containers:
+  - name: Service
+    image: service:latest 
+    ports: 
+     - containerPort: 80
+
+## 🔹 Shell Script — Print Date & Hostname
+
+
+#!/bin/bash 
+echo "Date: $(date)"
+echo "Hostname: $(hostname)"
+
+
+## 🔹 Jenkins Pipeline — Checkout Git
+
+pipeline {
+ agent {
+    label 'linux'
+   }
+
+stages { 
+ 
+ stage('Checkout') {
+    steps { 
+          echo "Checking out the code from github.."
+          git branch: 'Main',
+                 url: https://github.com/pathnex/dev-latest-project.git'
+     }
+  }
+ 
+ stage('List Files') {
+       steps { 
+          echo "Listing all the file"
+          sh 'ls -la'
+
+      }
+    }
+  }
+}
+
+
+## 🔹 GitLab CI — Checkout Git
+
+
+stages:
+ - Checout 
+
+git_Checkout_job: 
+  stage: Checkout
+  script: 
+   - git clone https://github.com/java/new-deployment.git
+   - cd payment-service-java
+   - ls -la
+   - ls -lahrtS
+
+
