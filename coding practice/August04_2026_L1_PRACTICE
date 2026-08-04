@@ -1,0 +1,258 @@
+L1 practice of codes for job #04-04-2026
+
+---------------------- ### docker 
+
+FROM python:3.12-slim 
+WORKDIR /dev
+COPY . .
+RUN pip install -r requirements.txt 
+EXPOSE 8000
+CMD ["python", "backend.py"]
+
+
+FROM node:22-alpine
+WORKDIR /UAT
+COPY . .
+RUN npm install 
+EXPOSE 3000
+CMD ["npm", "start"]
+
+
+FROM maven:3.9.9-eclipse-temurun-21-jdk AS builder
+WORKDIR /dev
+COPY . .
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin-17-jre-alpine
+WORKDIR /dev
+COPY -from=builer /dev/target/service.jar service.jar
+EXPOSE 8080
+CMD ["java", "-jar", "service.jar"] 
+
+
+
+---------- for Kubernetes 
+
+apiVersion: apps/v1
+kind:       Deployment
+metadata:  
+  name:   checkout-deployment
+
+spec: 
+ replicas: 5
+ selector: 
+   matchLabels: 
+     app: checkout
+
+ template: 
+   metadata: 
+    labels: 
+      app: checkout
+
+   spec: 
+     containers: 
+       -name: checkout-pod
+        image: checkout:latest
+        ports: 
+         - containerPort: 80
+
+-- for configMap
+
+apiVersion: v1
+kind:       ConfigMap
+metadata:   
+  name:     backend-configmap
+
+data: 
+  
+  APP_NAME:   "Checkout-service"
+  APP_ENV:    "DEV"
+  DATABASE_HOST:  "sql-1"
+  DATABASE_PORT:   3306
+
+
+------- for secrets
+
+apiVersion: v1
+kind:      Secret
+metadata:   
+   name: frontend-secret
+
+type: Opaque
+data:
+  
+  APP_KEY:  871710u2u2@# 
+  APP_TOKEN: pojeohah  #base64 coded
+  DB_HOST:   payment.ecommerce.svc.cluster
+  DB_PORT:   "5432"
+  DB_USERNAME: ecommerce-payment
+  
+------------------------------------------------
+for ansible
+
+
+---
+- name: Installing Apache On Ubuntu 
+  hosts:  webserver:backend-server:ubuntu
+  become: yes
+  
+  tasks: 
+   - name: Installing ......  
+     apt:                            # Module
+       name: apache2
+       state: present
+     
+    - name: Enabling The Service
+      service: 
+        name: apache2  
+        state: started
+        enabled: yes 
+
+
+------------------------------------------ 
+FOR Terraform
+
+provider "aws" {
+ region = "ap-south-1"  
+}
+
+resource "aws_instance" "front_end" {
+ 
+  ami                      =       "ami-272619"
+  instanc_type             =       "c7x.medium"
+  key_name                 =       "dev-access"
+  subnet_id                =       "subnet-27262"
+  vpc_security_group_ids   =        ["sg-2272"]
+
+tags = {
+  
+ NAME          =  "Front-end"
+ APPLICATION   =  "Payment-Service"
+ ENVIRONMENT   =  "DEV" 
+ REGION        =  "ap-south-1"
+ TEAM          =  "Devops-262"
+   
+   }
+ }
+
+output "Public_IP"  {
+   value = aws_instance.front_end.public_ip
+  }
+
+output "Private_IP"  {
+   value = aws_instance.front_end.private_ip
+ }
+
+
+---------------------------------
+
+provider "aws" {
+  region - "ap-south-1" 
+ }
+
+resource "aws_s3_bucket" "dev_log_inventory" {
+  
+  bucket    =    "dev-logs-inventory-management-backend"
+  
+tags = { 
+
+  NAME          =  "Bucket-for-logs-dev"
+  REGION        =  "ap-south-1"
+  APPlICATION   =  "frontend-service"
+  TEAM          =  "UAT-devops"
+  ENVIRONMENT   =  "QA"
+ 
+   }
+ }
+
+
+output "Bucket_Name"  {
+  value  = aws_s3_instance.dev_log_inventory.bucket
+ }
+
+
+----------------------------------------------------------
+
+terraform {
+ backend "s3" {
+
+  bucket          =     "terraform-for-dev"
+  key             =     "/dev/aug/terraform.tfstate"
+ region           =     "ap-south-1"
+ dynamodb_table   =     "Dev-terraform"
+ encrypt          =      true 
+
+  }
+}
+
+
+------------
+
+terraform { 
+  backend "s3" {
+ 
+  bucket         =  "lock-for-dev-terraform"  
+  key            =   "/dev/lock/backend.tfstate"
+  region         =   "ap-south-1" 
+  use_lockfile   =    true
+  encrypt        =     true 
+
+  }
+}
+
+
+
+-------- # Jenkins
+
+
+pipeline {
+ agent {
+   label 'dev-linux'
+}
+
+stages{
+
+stage('Checkout') {
+  steps{ 
+         git branch: 'Main',
+               url:   'https://github.com/dev-appliction.git'
+     }
+  }
+
+stage('Build') {
+ steps { 
+     echo " Building The Java Application" 
+     sh 'mvn clean package -Dskiptests'
+  }
+}
+
+stage('Unit test'){
+   steps{ 
+       echo 'Starting The Unit Test'
+        sh 'mvn test'
+   }
+ }
+
+stage('Docker Image'){
+       steps{ 
+          echo 'Building the docker image'
+           sh 'docker build -t java-frontend:latest .'
+    }
+  }
+
+stage('DOcker Hub'){
+    steps{ 
+       echo 'Pushing The Image To Docker'   
+       sh 'docker push'
+    }
+  }
+
+stage(Deployment){
+      steps{   
+          echo 'Deploying The App to Kubernetes'
+            sh 'Kubectl apply -f deployment.yaml'
+         }
+       }
+     }
+   }
+
