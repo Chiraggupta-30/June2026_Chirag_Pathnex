@@ -1,0 +1,257 @@
+—- Ansible playbook
+
+ —
+ - name: Install & Enable Nginx
+    hosts:  linux:ubuntu:frontend
+    become: yes
+
+    tasks: 
+   - name: Installing Nginx
+       yum: 
+        name: nginx
+         state:  present
+          
+   - name: enabling the nginx
+       service: 
+         name: nginx
+          state:  present
+          enable:  yes     #starts the service when server get started
+
+
+ ——————————————————————————————————
+Docker 
+FROM python:3.12-slim
+WORKDIR /workspace
+COPY . .
+ RUN pip install -r requirements.txt
+ EXPOSE 8000
+CMD [“python”, “payment.py”]
+FROM node:22-apline
+WORKDIR /payment
+COPY . .
+RUN npm install
+EXPOSE 3000
+ CMD [“npm”, “start”]
+
+ ——————————————
+
+
+FROM maven:3.9.9-eclipse-temurin-21-jdk AS builder
+ WORKDIR /payment
+ COPY . .
+ RUN mvn clean package -DskipTests
+FROM eclipse-temurin-19-jre-alpine
+ WORKDIR /payment
+COPY -from=builder /payment/target/*.jar order.jar
+ EXPOSE 8080
+CMD [“-jar”, “java”, “order.jar”]
+
+ ——————————————————————————————————
+
+ Kubernetes Yaml file
+
+
+
+
+For replicaset
+
+ apiVersion: apps/v1
+ kind:            ReplicaSet
+ metadata:   
+    name: alert-service-replicaset
+
+
+spec:
+  replicas: 5
+  selector:
+     matchLabels:
+      app: alert
+ 
+  template:
+    metadata:
+      labels:
+         app: alert
+  
+    Spec: 
+      Containers: 
+        - name: alert-pod
+           Image: alert-service:latest
+           Ports:
+            - containerPort: 80
+
+ For pods
+
+ apiVersion: v1
+Kind:        Pod
+Metadata: 
+    Name:   backend-pod
+
+
+Spec: 
+     Containers: 
+      - name: backend 
+         Image: backend:latest          
+         ports: 
+          - containerPort: 80 
+ 
+ for StatefulSet
+
+ apiVersion: apps/v1
+ kind:         StatefulSet
+ metadata: 
+    Name: backend-database-replicaset
+
+ spec:
+   serviceName:  “database” #headless_service
+   replicas:     5
+   selector: 
+      matchLabels: 
+          app: backend
+  
+    template: 
+      metadata: 
+         labels: 
+           app: backend 
+   
+       Spec: 
+          Containers: 
+           - name: Backend-pod
+              Image: database:latest
+               ports:
+              - containerPort: 80
+ 
+
+ ——————————————————————————————————
+
+ Terraform File
+
+ provider “aws” {
+   Region = “ap-south-1”
+ }
+Resource “aws_instance” “ubuntu_server”. {
+      ami                                        =              "ami-3729227"
+       instance_type                   =               "c7i-flex.large"
+      key_name                            =               "login-key”
+     subnet_id                           =               "subnet-372171”
+     vpc_security_group_ids   =               [“sg-181922”]
+Tags = {
+  
+ Name                     =           “ubuntu-server”
+ Environment          =           “UAT”
+ Region                   =            “ap-south-1”
+ Application.          =            “order-processing”
+ Team                     =            “devops-2828”
+ 
+      }
+}
+Output  “Public_IP”   {
+      Value  = aws_instance_ubuntu_server.public_ip
+   }
+Output   “Private_IP”     {
+  Value = aws_instance.ubuntu_server.[*].private_ip   # use [*] when there is more then 1 instance otherwise don’t use it
+  }
+
+
+
+ —————————————— 
+S3 bucket
+
+
+ provider “aws” {
+  Region = “ap-south-1” 
+}
+Resource “aws_s3_bucket” “all_logs_for_dev” {
+  Bucket           =              “log-dev-2026-8181”
+  Tags = {
+ 
+ Name                     =      “logs-bucket-dev”
+ Environment          =      “Dev” 
+ Region                    =      “ap-south-1”
+ Application            =      “prometheus-logs”
+ Team.                     =      “Devops”
+ 
+   }
+}
+Output     “Bucket”   {
+    Value        =      aws_s3_bucket.all_logs_for_dev
+   }
+——————————————————————————
+ S3 For Backend
+
+ terraform {
+ Backend “s3” {
+Bucket                      =              “infra-bucket-dev”
+Key                            =              "dev/tf/infra.tfstate  
+Region                      =               “ap-south-1” 
+dynamodb_table     =               “tf-lock”
+Encrypt                     =                true 
+  }
+}
+
+
+
+
+ terraform { 
+  Backend “s3” {
+  
+  bucket             =          “dev-infra-state”
+  key                   =           “infra/dev/infra.tfstate
+  Region             =           “ap-south-1”
+  use_lockfile     =            true
+   Encrypt           =             true 
+   }
+}
+
+
+ ——————————————————————————
+
+ Jenkins
+
+ pipeline {
+   Agent   {
+        Label ‘backend-server’ 
+     }
+Stages{
+stage(‘Checkout’) {
+   Steps{ 
+           echo ‘Checking out the code……’
+          git checkout: ‘Main’,
+                     Url:       ‘https://github.com/payment-java.git'
+       }
+   }
+Stage(‘Build’) {
+   Steps{
+        echo ‘Bulding the application…..’
+         sh. ‘mvn clean package -DskipTests’
+    }
+  }
+Stage(‘Unit Test’) {
+   Steps{
+        echo ‘Testing the application…..’
+         sh. ‘mvn test’
+    }
+  }
+
+ Stage(‘Docker Image’) {
+   Steps{
+        echo ‘Bulding the Docker Image…..’
+         sh. ‘Docker push -t order:latest’
+    }
+  }
+Stage(‘Pushing The Image ’) {
+   Steps{
+        echo ‘Pushing The Image To ECR …..’
+         sh. ‘Docker push’
+    }
+  }
+Stage(‘Deployment’) {
+   Steps{
+        echo ‘Deploying The Application To K8s…..’
+         sh. ‘Kubectl apply -f’
+         }
+      }
+   }
+}
+
+
+
