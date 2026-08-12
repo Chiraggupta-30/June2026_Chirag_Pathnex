@@ -1,0 +1,364 @@
+#### Docker
+-------------------------------------------------------------------------
+
+
+#java multi Stage
+
+FROM maven:3.9.9-eclipse-temurin-21-jdk AS builder           # i have used 17 and 19 jdk version also
+WORKDIR /inventory
+COPY . . 
+RUN mvn package clean -DsktipTest
+
+
+
+FROM eclipse-temurin-21-jre 
+WORKDIR /inventory 
+COPY from=builder /inventory/target/*.jar backend-payment.jar
+EXPOSE 8080
+CMD ["java", "-jar", "backend-payment.jar"]
+
+
+
+
+#Python 
+------------------------
+
+FROM python:3.12-slim
+WORKDIR /invenetory
+COPY . .
+RUN pip install -r requirements.txt
+EXPOSE 8000
+CMD ["python", "inventory.py"]
+
+
+#Node 
+----------------------------------
+
+FROM node:22-alpine
+WORKDIR /payment
+COPY . .
+RUN npm install
+EXPOSE 3000
+CMD ["npm", "start"]
+
+
+-----------------------------------------------------------
+
+terraform 
+
+
+
+for ec2 
+
+
+provider "aws" {
+  reigion =  ap-south-1" 
+}
+
+resource "aws_instance" "backend_server" {
+
+   ami                      =          "ami-2828202"
+   instance_type            =          "c7i-flex.large"
+   subnet_id                =          "sub-27272"
+   vpc_security_group_id    =          ["sg-2282]
+   key_name                 =          'backend"
+  
+  tags = {
+
+   NAME           =   "payment-backend"
+   ENVIRONMENT    =   "UAT"
+   APPLICATION    =   "Healthcare"
+   REGION         =   "ap-south-1"
+   TEAM           =   "Devops"
+   }
+ }
+
+
+output  "Public-IP" {
+  value = aws_instance.backend_server
+ }
+
+output  "Private_IP"  {
+  value  =  aws_instance.backend_server
+  }
+
+
+--------------------------------------------------
+For S3
+
+
+provider "aws" {
+ region = "ap-south-1" 
+ }
+  
+resource "aws_s3_bucket" "logs_datadog" {
+   bucket       =       "logs-datadog-39291" 
+
+ tags = { 
+  
+   NAME           =         "logs-datadog"
+   ENVIORNMENT    =         "QA"
+   APPLICATION    =         "Datadog"
+   REGION         =         "ap-south-1"
+   TEAM           =         "DEVOPS" 
+
+    }
+  }
+
+
+output "Bucket_Name" {
+ value    =    aws_s3_bucket.logs_datadog
+  }
+
+
+-----------------------------------------------------
+ FOR BACKEND TERRAFORM STATE FILE 
+
+
+terraform {
+ backend "s3" {
+   bucket          =     "terraform-state-file-dev"
+   key             =     "/dev/main/backend.tfsate"
+   dynamodb_table  =     "dev-terraform"
+   encrypt         =     true
+   region          =     "ap-south-1"
+  
+    }
+  }
+
+
+-------------------------------------------------------
+
+FOR kubernetes 
+
+
+apiVersion:  apps/v1
+kind:        Deployment 
+metadata: 
+  name:   inventory-deployment
+spec:   
+   replicas: 5
+   selector: 
+     matchLabels: 
+       app: inventory 
+   
+   template: 
+     metadata:   
+       labels: 
+         app:  inventory 
+
+     spec: 
+       containers: 
+        - name: inventory-pod
+          image:  inv:latest 
+          ports:  
+           - containerPort: 80
+
+
+for replicaset
+
+apiVersion: apps/v1
+kind:       ReplicaSet
+metadata:   
+  name:    order-service-replicaset
+
+spec: 
+  replicas: 5
+  selector: 
+   matchLabels: 
+     app: order-service
+ 
+  template: 
+    metadata: 
+     labels:   
+       app: order-service
+
+    spec: 
+      containers: 
+       - name:  order-pod
+         image: order:latest
+         ports: 
+          - containerPort: 80
+
+
+FOR POD 
+
+
+apiVersion: v1
+kind:       pod
+metadata:  
+  name:  order-service-pod
+
+spec: 
+containers: 
+  - name: order-pod
+    image:  order:latest 
+    ports: 
+     - containePort: 80
+ 
+-------------------
+
+FOR STATEFULSET
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  app: backend-database-replicaset
+spec:
+  serviceName:   "Backend-DB"
+  replicas:        5
+  selector:       
+    matchLabels: 
+     app:   backend-database
+ 
+  template: 
+   metadata: 
+    labels: 
+     app: backend-database
+  
+   spec: 
+    containers: 
+     - name: backend-pod
+       image: backend:latest
+       ports: 
+        - containerPort: 80
+
+FOR CLUSTERIP 
+
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: orders-service
+
+spec:
+  selector:
+    app: order
+ 
+  ports: 
+   - protocol: TCP 
+     port: 80
+     targetPort: 80
+
+ type: ClusterIP 
+
+
+FOR NODEPORT
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name:  inventory-service
+spec:
+ selector: 
+   app: inventory 
+ ports:
+  - protocol: TCP 
+    port:  80
+    targetPort: 80
+    NodePort:  30060
+
+type: NodePort
+
+
+FOR LoadBalancer
+
+apiVersion: v1
+kind: Service
+metadata:  
+ name:   notification-service
+spec:
+  selector: 
+   name: notification 
+  ports: 
+   - protocol: TCP 
+     port: 80
+     TargetPort: 80
+  type: LoadBalancer
+
+
+
+----------------------------------------------------------
+
+FOR ANSIBLE
+
+
+
+---
+- name: INSTALLING NGINX AND ENABLAING IT
+  host: linux 
+  become: yes 
+
+  - task: Instaling nginx...
+    yum : 
+      name: nginx
+      state:  present 
+      
+  - task: Enabling the Nginx....
+    service: 
+      name: nginx
+      state: started
+      enabled: yes 
+
+
+
+FOR PIPElINE 
+
+
+
+pipelien {
+  agent {
+     label 'ubuntu'   
+   }
+
+Stages {
+
+
+stage('Checkout'){
+   steps{ 
+        echo 'Checking out the code from github' 
+        git branch: 'Main',
+          url: 'https://github.com/java-application-2233.git'
+    }
+  }
+
+stage('build') {
+  steps{ 
+      echo 'bulding out the code....'
+      sh 'mvn clean package -DskipTests'
+      }
+   }
+
+stage('Unit-test'){
+   steps{ 
+      echo 'Starting the unit testing.....'
+       sh 'mnv test'
+    }
+ }
+  
+stage('Build-Image'){
+   steps{
+     echo 'bulding the docker image'
+      sh 'docker build -t order:277 .'
+    }
+ }
+
+stage('Pushing-Image'){
+   steps{ 
+     echo 'Pushing The Image To Private Registry'
+     sh 'docker push '
+   }
+ }
+
+stage('deployment'){ 
+   steps{  
+      echo 'deploying the image'
+       sh 'kubectl apply -f'
+        }
+      }
+   }  
+}
+
+
+
+
