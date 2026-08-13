@@ -1,0 +1,123 @@
+-# Anisble For restarting the Nginx 
+
+---
+- name: Copy and Star the nginx 
+  hosts: ubuntu
+  bceome: yes 
+
+  tasks: 
+   - name: Copy the file onto the server....
+     copy: 
+      src: index.html
+      dest: /usr/share/nginx/html/index.html 
+      notify: restart nginx
+
+  handlers: 
+   - name: restart nginx
+     service: 
+      name: nginx
+      state: restarted 
+
+-# terraform for ec-2 and insatlling nginx c6a.12xlarge
+
+provider "aws" {
+  region = "ap-south-1"
+  }
+
+resource "aws_instsnce" "bakend_server" {
+  
+   ami                     =  "ami-241122"
+   subnet_id               =  "subnet-727"
+   region                  =  "ap-south-1" 
+   key_name                =   "backend_server"
+   vpc_security_group_ids  =   ["sg-2282"]
+
+   user_data = >> EOF         # user data shared the data or script to aws after creating ec2 instance so that i can be executed on it"  and you can use any name i use EOF because it's widely used i can use Script/run or any other name
+   #!/bin/bash  
+   yum install -y nginx 
+   systemctl start nginx
+   EOF 
+
+
+tags = {
+  
+ NAME          :    "Backend-server" 
+ ENVIRONMENT   :    "UAT"
+ APPLICATIon   :    "DB"
+ TEAM          :    "Dev-ops"
+ REGION        :    "ap-south-1" 
+
+   }
+}
+
+
+-# FOr kubernerets with resource and limit 
+
+apiVersion: v1
+kind: Pod 
+metadata: 
+ name: order-pod 
+
+spec: 
+  containers: 
+   - name: order
+     image: order:latest 
+    
+     resources:
+      requests:                  # minimum resource the pod will get  
+       cpu: "100m" 
+       memory: "128Mi"
+ 
+      limits:                    # maxmimum resource the pod can use 
+       cpu: "500m"
+       memory: "512Mi"
+
+
+
+-# Jenkins Environment Variable 
+
+pipeline {
+  agent {
+     label 'linux-server' 
+  }
+
+environment { 
+   COMPANY_NAME = "delliote"
+}
+
+
+stages{
+
+stage('checkout') {
+ steps{ 
+      sh 'echo Checking out the code for $COMPANY_NAME'
+      git branch: 'Main',
+            url: 'https://github.com/order-app.git'
+  }
+}
+
+stage('build') {
+  steps{ 
+    sh 'mvn clean package -D.company_name=$COMPANY_NAME'
+  }
+}
+  
+## 🔹 GitLab CI — Use Environment Variables
+
+
+stages: 
+  - build 
+
+variables: 
+  Company_name = "Deliotte" 
+
+build: 
+  stage: build
+  image: maven:3.9.9-eclipse-temurin-21-jdk
+  script: 
+    - git clone  https://github.com/order-service.git
+    - cd order-service
+    - echo "Welcome to $Compmany_name , congratulation for becoming devops engineer"
+    - maven clean package -D.company.name=$Company_name
+
+
