@@ -1,0 +1,209 @@
+  Debugging Pipelines
+## 🔹 Jenkins Pipeline — Debugging
+You will learn how to **fix broken stages and handle errors**.
+
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Pathnex/sample-java-app.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh '''
+                mvn clean compile || { echo "Compile failed"; exit 1; }
+                '''
+            }
+        }
+        stage('Test') {
+            steps {
+                sh '''
+                mvn test || { echo "Tests failed"; exit 1; }
+                '''
+            }
+        }
+    }
+}
+
+
+## Jenkins Pipeline 
+
+pipeline {
+  agent any 
+  
+  stages {
+    
+    stage('Checkout') {
+      steps { 
+        echo "Checking out the code from Github"
+         git branch: 'Main',
+                url: 'https:/github.com/Pathnex/sample-java-app.git'
+       }
+    }
+
+     stage('Build') {
+       steps { 
+           echo "Building The Application" 
+              sh '''
+                  mvn clean compile || { 
+                     echo "compile is unsucessful"  
+                      exit 1  
+                   }
+                 '''
+               }
+           }
+
+      stage('Test') { 
+        steps { 
+             echo "Testing the compiled code"
+             sh '''
+                 mvn test || {
+                    echo "test failed during the processs" 
+                      exit 1 
+                   }
+               '''
+              }
+            }
+          } 
+       }
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+# 🔹 GitLab CI — Debugging
+You will learn how to **handle job failures and exit codes**.
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  image: maven:3.8.1-jdk-17
+  script:
+    - git clone https://github.com/Pathnex/sample-java-app.git
+    - cd sample-java-app
+    - mvn clean compile || { echo "Compile failed"; exit 1; }
+
+test:
+  stage: test
+  image: maven:3.8.1-jdk-17
+  script:
+    - cd sample-java-app
+    - mvn test || { echo "Tests failed"; exit 1; }
+
+
+
+# 🔹 GitLab CI — Fixed 
+
+stages: 
+  - buiild
+  - test 
+   
+build_job: 
+  stage: build
+  image: maven:3.9.9-jdk-21
+  script: 
+   - git clone https://github.com/Pathnex/sample-java-app.git
+   - cd sample-java-app
+   - mvn clean compile || { echo "Compile failed"; exit 1;  }
+   artifacts:
+    path: 
+      - sample-java-app/
+
+test_job:
+   stage: test
+   image: maven:3.9.9-jdk-21
+   dependencies: 
+    - build 
+   script: 
+    - cd sample-java-app
+    - mvn test || { echo "Test failed during the process"; exit 1; }
+    
+
+-----------------------------------------------------------------------------------------------
+
+## 🔹 Ansible (broken)
+
+- name Install nginx
+ hosts all
+ become yes
+ tasks:
+  -name: Install nginx
+  yum:
+    name nginx
+    state present
+
+
+
+# Ansible fixed
+
+--- 
+- name: Install Nginx
+  hosts: all
+  become: yes
+  
+  tasks: 
+   - name: Install Nginx
+     yum: 
+      name: nginx
+      state: present 
+
+
+-----------------------------------------------------------------------------------
+
+ 🔹 Terraform (broken)
+
+resource "aws_instance" "BrokenEC2" {
+  ami = "ami-0xyz"
+  instance_type = t2.micro
+tags {
+ Name = "Broken"
+}
+}
+
+🔹 Terraform (Fixed)
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_instance" "front_end" {
+   instance_type       =    "t2.mciro"
+   ami                 =    "ami-29282"
+ 
+  tags = { 
+  
+   NAME  = "Front-end"
+ 
+   }
+ }
+
+------------------------------------------------------------------------------------
+
+# 🔹 Kubernetes (broken)
+
+apiVersion v1
+kind Pod
+metadata:
+ name pathnex
+spec
+ containers:
+   - name app
+     image nginx
+
+
+🔹 Kubernetes (broken)
+
+apiVersion: v1
+kind: Pod
+
+metadata: 
+  name: Front-end-pod
+
+spec: 
+ containers: 
+  - name: front-end
+    image: nginx
+
+
