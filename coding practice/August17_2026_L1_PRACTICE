@@ -1,0 +1,356 @@
+Docker File 
+
+---- #For Java
+
+FROM maven:3.9.9-eclipse-temurin-21-jdk AS builder
+WORKDIR /order
+COPY . .
+RUN mvn clean package -DskipTests
+
+
+FROM eclipse-temurin:21-jre-alpine 
+WORKDIR /order
+COPY --from=builder /order/target/*.jar orders.jar
+EXPOSE 8080
+CMD ["java", "-jar", "orders.jar"]
+
+
+
+---- for python
+
+
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt 
+EXPOSE 8000
+CMD ["python", "backend.py"]
+
+
+---- for node 
+
+FROM node:22-alpine
+WORKDIR /app
+COPY . .
+RUN npm install
+EXPOSE 3000
+CMD ["npm", "start"]
+
+
+------------------------------------------------------
+#for ansible
+
+---
+- name: Installing nginx and enabling it 
+  hosts: backend
+  become: yes
+  
+  tasks: 
+   -name: Installing The Nginx 
+    apt: 
+     name: nginx
+     state: present
+
+   -name: Enabling The Nginx
+    service:
+     name: nginx
+     state: started 
+     enabled: yes 
+
+
+--------------------------------------
+# For Terraform
+
+
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_instance" "frontend_server" {
+  instane_type                  =  "c7i-flex.large"
+  ami                           =  "ami-62527"
+  subnet_id                     =  "subnet-7272"
+  key                           =  "front-end-access"
+  vpc_security_group_ids        =  ["sg-827272"]
+
+  tags = {
+   
+  NAME          =    "front-end-server"
+  ENVIRONMENT   =    "DEV"
+  REGION        =    "AP-SOUTH-1"
+  APPLICATION   =    "PAYMENT"
+  TEAM          =    "DEV-TEAM-BAT"
+    }
+  }
+
+output "PUBLIC_IP" {
+  value =  aws_instance.[*].frontend_server.public_ip
+ }
+
+output "PRIVATE_IP"  {
+  value =  aws_instance.frontend_server.private_ip
+  }
+
+output "Instance_Type" {
+  value = aws_instance.frontend_server.instance_type
+}
+ 
+
+--For S3
+
+provider "aws" {
+  region = "ap-south-1" 
+ }
+
+resource "aws_s3_bucket" "data_for_payment" {
+  bucket    =   "payment-logs-2712782"   #globally unique name 
+  
+ tags = {
+  
+ NAME         =   "PAYMENT-LOGS" 
+ ENVIRONMENT  =    "UAT"
+ REGION       =    "AP-SOUTH-1"  
+ APPLICATION  =    "PAYMENT-SERVICE"
+ TEAM         =    "DEVOPS"
+
+   }
+ }
+
+output "BUCKET_NAME" {
+   value   =   aws_s3_bucket" "data_for_payment.bucket
+ }
+
+
+--- FOR backend S3
+
+terraform { 
+ backend "S3" { 
+  bucket         = "terraform-statelock-872722" 
+  key            = "/dev/terraform"
+  region         = "ap-south-1"
+  dynamodb_table = "dev-terraform-lock"
+  encrypt        = true 
+   }
+ }
+
+
+--- FOR backend S3
+
+terraform { 
+ backend "S3" { 
+  bucket         = "terraform-statelock-872722" 
+  key            = "/dev/terraform"
+  region         = "ap-south-1"
+  use_lockfile   = true
+  encrypt        = true 
+   }
+ }
+
+
+
+-- terraform bucket with versioning enabled 
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_s3_bucket" "payment_bucket_29292" {
+  bucket = "payment-logs-for-dev"
+
+  tags = {
+    Name        = "PAYMENT-LOGS"
+    Environment = "QA"
+    Team        = "DEV"
+    Region      = "AP_SOUTH-1"
+    Application = "ORDER"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "payment_bucket_versioning" {
+  bucket = aws_s3_bucket.payment_bucket_29292.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+output "bucket_name" {
+  value = aws_s3_bucket.payment_bucket_29292.bucket
+}
+
+----------------------------------------------------------------------------------
+FOR Jenkins 
+
+
+pipeline { 
+ agent  {
+   label 'ubuntu'
+  }
+
+stages{
+  
+stage('checkout') {
+  steps{ 
+     echo "Checking Out The Code From GitHub"
+      git branch: 'Main',
+             url: 'https://github.com/payment-service.git'
+    }
+  }
+
+stage('build'){ 
+  steps{  
+    echo "starting the building phase...."
+     sh 'mnv clean build -DskipTests'
+    }
+  }
+
+stage('Unit Testing') {
+   steps{
+     echo "testing the code......"
+      sh 'mvn test'
+    }
+ }
+
+stage('Docker Image') {
+   steps{ 
+      echo "Test Successfull, building the docker image"  
+      sh 'docker build -t "
+   }
+}
+
+stage('Pushing To ECR') {
+  steps{ 
+    echo "docker image being uploaded to ecr.."
+      sh 'docker push'
+   }
+ 
+stage('Deployment'){
+  steps{
+    echo "Image is being Deployed"
+      sh 'kubectl apply -f'
+       }
+     }
+   }
+ }
+
+-------------------------------------------------------
+#for Kubernetes 
+
+apiVersion: apps/v1
+kind:       Deployment
+metadata: 
+   name: order-service-deployment
+spec: 
+ replicas: 4
+ selector: 
+   matchLabels: 
+      app: order-service
+ template:  
+   metadata: 
+     labels: 
+       app: order-service
+   
+   spec: 
+     containers: 
+      - name: order
+        image: order-service:latest
+        ports: 
+         - containerPort: 80
+
+----
+apiVersion: v1
+kind:      Service
+
+metadata:  
+ name:    backend-payment-service
+
+spec: 
+
+  selector: 
+    app: backend-payment 
+
+  ports:
+   - protocol: TCP 
+     port: 80
+     targetPort: 80
+
+  type: ClusterIP
+
+
+-------
+apiVersion: v1
+kind:   Service
+
+metadata: 
+ name: frontend-payment-service
+spec: 
+
+  selector: 
+    app: frontend-payment
+
+  ports: 
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30020
+
+  type: NodePort
+
+-----------
+apiVersion: v1
+kind: Service
+
+metadata: 
+  name: order-service
+
+spec: 
+
+ selector: 
+   app: order
+
+ ports: 
+  - protocol: TCP 
+    port: 80
+    targetPort: 80
+
+ type: LoadBalancer
+
+
+
+----------------- 
+for configMap 
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata: 
+  name: backend-configuration-config
+
+spec: 
+ data: 
+  
+  DB_NAME: "sql"
+  DB_USERNAME": "hcl-27"
+  
+-----
+
+for secrets 
+
+   apiVersion: v1
+kind: Secret
+
+metadata: 
+  name: backend-configuration-secret
+
+spec: 
+ type: opaque 
+  
+  data:  
+
+  DB_TOKEN:       "9229292l"
+  DB_KEY":        "DB-282722"
+
+----------------------------------
+
