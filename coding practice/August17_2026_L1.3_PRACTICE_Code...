@@ -1,0 +1,149 @@
+#for Ansible
+
+---
+- name: Installing All The Required Package 
+  hosts: all
+  become: yes 
+  
+  vars: 
+    packages: 
+     - tee
+     - uzip
+     - gzip
+     - vim
+
+  task: 
+   - name: Install All The Required Packaeges"
+      yum: 
+       name: "{{ packages }}"
+       state: present 
+
+----------------------------------------------------------
+
+# terraform VPC + SUBNET 
+
+provider "aws" {
+  region = "ap-south-1" 
+}
+
+resource "aws_vpc" "hcl_vpc" {
+ cidr_block  = "10.0.0.0/16"
+ 
+ tags  = {
+
+ NAME   = "HCL_VPC" 
+    }
+  }
+
+
+resource "aws_subnet" "subnet_hcl" {
+   vpc_id                   =  "aws_vpc.hcl_vpc.id"
+  cidr_block                =  "10.0.10.0/24"
+ maps_public_ip_on_launch   = true 
+
+tags = { 
+  
+ NAME = "HCL-Subnet" 
+  
+   }
+}
+
+---------------------------------------------------------------------
+
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: Backend-livenedd-readiness-pod
+
+spec:
+
+containers:
+ - name: backend 
+   image: backend:latest 
+   livenessProbe:
+     httpGet: 
+      path: /
+      port: 80
+     initialDelaySeconds: 5
+   
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+      initialDelaySeconds: 3
+
+---------------------------------------------
+
+
+# Conditional Stages
+
+## 🔹 Jenkins Pipeline — Conditional Execution
+
+pipelien {
+  agent any 
+ 
+ parameter {
+   string{name: 'ENVIRONMENT', defaultValue: 'DEV', description: 'ENVIRONMENT FOR DEPLOYMENT'}
+ }
+
+environment {
+   COMPANY_NAME: "AMERICAN-EXPRESS"
+}
+
+stages {
+  
+  stage('Checkout') {
+      steps { 
+           git branch: 'Main',
+                  Url: https://github.com/payment-java.git
+        }
+     }
+
+   stage('Build') {
+            when { 
+                branch 'Main'
+              }
+      steps {
+       sh ' echo "Bulding the application for $COMPANY_NAME"'
+         sh 'mvn clean package -DskipTests'
+        }
+      }   
+    
+    stage('Deploy') { 
+        when { 
+           expression { params.ENVIRONMENT == 'UAT' } 
+          } 
+       steps {
+         sh 'echo "Deploying Application in $ENVIRONMENT by $COMPANY_NAME"'
+         sh 'kubectl apply -f deployment.yaml'
+        }
+      }
+    }
+ }
+
+-------------------------------------------------------------------------------------------------------
+
+
+stages: 
+ - build 
+ - deploy
+
+build_job:
+ stage: build
+ image: maven:3.9.9-jdk-21
+ script: 
+  - git clone https://github.com/order-service.git
+  - cd order-service
+  - mvn clean package -Dskiptests
+ only: 
+  - main 
+
+deploy_job:
+ stage: deploy
+ image: apline:latest 
+ script: 
+  - echo "Deploying to $CI_ENVIRONMENT_NAME by pathenx/neeraj bhaiya/june Batch "
+  only: 
+   variables: 
+    $CI_ENVIRONMENT_NAME == "DEV"
